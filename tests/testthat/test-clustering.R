@@ -122,6 +122,25 @@ testthat::test_that("azp_tabu", {
 
 })
 
+testthat::test_that("azp_tabu honours initial_regions", {
+    library(sf)
+    guerry_path <- system.file("extdata", "Guerry.shp", package = "rgeoda")
+    guerry <- st_read(guerry_path)
+    queen_w <- queen_weights(guerry)
+    data <- guerry[c("Crm_prs", "Crm_prp", "Litercy", "Donatns", "Infants",
+                     "Suicids")]
+
+    start <- skater(5, queen_w, data)
+    no_init <- azp_tabu(5, queen_w, data, tabu_length = 10, conv_tabu = 10)
+    warm <- azp_tabu(5, queen_w, data, tabu_length = 10, conv_tabu = 10,
+                     initial_regions = start$Clusters)
+
+    # A warm start is a different search path, and tabu keeps the best
+    # solution seen, so it can never finish below its starting partition.
+    testthat::expect_false(identical(warm$Clusters, no_init$Clusters))
+    testthat::expect_gte(warm[[5]], start[[5]])
+})
+
 testthat::test_that("maxp_greedy", {
     library(sf)
     guerry_path <- system.file("extdata", "Guerry.shp", package = "rgeoda")
